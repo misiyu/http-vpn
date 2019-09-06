@@ -84,6 +84,14 @@ int Ndn_socket::read(char *data ) {
 	return recv_n ;
 }
 
+int Ndn_socket::read(char *data , int buf_sz) {
+	r_queue.wait4data() ;
+	int data_len = r_queue.get_data_len() ;
+	if(data_len > buf_sz) data_len = buf_sz ;
+	r_queue.get_ndata(data , data_len) ;
+	r_queue.rmv_n(data_len) ;
+	return data_len ;
+}
 
 void Ndn_socket::onInterest(const InterestFilter& filter, 
 		const Interest& interest) {
@@ -96,6 +104,7 @@ void Ndn_socket::onInterest(const InterestFilter& filter,
 					interest.getParameters().value_size()) ;
 			string datas_name((char*)dname_block.value() , 
 					dname_block.value_size()) ;
+			cout << "datas_name : "  <<datas_name << endl ;
 			// format : /ndn/edu/pkusz/node11/vpn/5-9
 			int idx1 = datas_name.rfind('/')+1 ;
 			int first, last ;
@@ -124,11 +133,16 @@ void Ndn_socket::onInterest(const InterestFilter& filter,
 void Ndn_socket::onData(const Interest& interest , const Data& data){
 
 	int data_sz = data.getContent().value_size() ;
-	pthread_mutex_lock(&recv_mutex) ;
-	memcpy(read_buf+recv_n , (char*)(data.getContent().value()) , data_sz ) ;
-	recv_n += data_sz ;
-	pthread_mutex_unlock(&recv_mutex) ;
-	if(recv_n == data_sz) pthread_cond_signal(&has_recv) ;
+	/*
+	 *pthread_mutex_lock(&recv_mutex) ;
+	 *memcpy(read_buf+recv_n , (char*)(data.getContent().value()) , data_sz ) ;
+	 *recv_n += data_sz ;
+	 *pthread_mutex_unlock(&recv_mutex) ;
+	 *if(recv_n == data_sz) pthread_cond_signal(&has_recv) ;
+	 */
+	
+	r_queue.push_ndata(reinterpret_cast<const char*>(data.getContent().value()),
+			data_sz) ;
 }
 
 void Ndn_socket::onNack(const Interest& interest, const Nack& nack){

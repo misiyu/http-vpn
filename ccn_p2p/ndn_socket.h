@@ -7,6 +7,7 @@
 #include <ndn-cxx/face.hpp>
 #include <errno.h>
 #include <exception>
+#include "r_queue.h"
 
 using std::string ;
 using ndn::Face ;
@@ -27,6 +28,7 @@ public:
 	int write(const char * data , int len) ;
 	int write(const char * data , int len , string dname_base) ;
 	int read(char *data ) ;
+	int read(char *data , int buf_sz) ;
 	int close() ;
 private:
 	void onInterest(const InterestFilter& filter, const Interest& interest) ;
@@ -50,6 +52,7 @@ private:
 	pthread_mutex_t recv_mutex ;
 	pthread_cond_t has_recv ;
 	unsigned int seq ;
+	R_Queue r_queue ;
 	
 
 	Face m_face ;

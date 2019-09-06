@@ -100,8 +100,14 @@ int R_Queue::get_ndata(int start , char *data ,int n ){
 		memcpy(data,&buff[start],n);
 	}
 }
+// copy n Byte data from buff to data 
+// 从head开始，往后取n字节数据
+int R_Queue::get_ndata(char *data ,int n ){
+	get_ndata(head , data , n) ;
+}
+
 // 队列中加入n字节数据
-int R_Queue::push_ndata(char *data , int n){
+int R_Queue::push_ndata(const char *data , int n){
 	//if(get_free_space() < n) return -1 ;	
 	while(get_free_space() < n ) ;
 	int clen ;

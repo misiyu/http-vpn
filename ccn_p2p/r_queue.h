@@ -10,7 +10,7 @@ class R_Queue
 {
 public:
 	R_Queue() ;
-	virtual ~R_Queue();
+	~R_Queue();
 	int get_head();
 	int get_rear();
 	bool is_full();
@@ -35,9 +35,10 @@ public:
 	// copy n Byte data from buff to data ;
 	// 从start开始，往后取n字节数据;
 	int get_ndata(int start , char *data ,int n );
+	int get_ndata(char *data ,int n );
 
 	// 队列中加入n字节数据;
-	int push_ndata(char *data , int n);
+	int push_ndata(const char *data , int n);
 
 	// 等待数据，若队列为空，当前进程等待在 has_data变量下
 	void wait4data() ;
