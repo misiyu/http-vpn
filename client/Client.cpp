@@ -120,9 +120,15 @@ void Client::forever(){
 
 // server start
 void Client::start(){
-	this->listenLocal();
-	this->forever();
-	close(this->sockfd);
+	/*
+	 *this->listenLocal();
+	 *this->forever();
+	 *close(this->sockfd);
+	 */
+
+	this->ndn_listen_local("/localhost/nfd/vpn/client") ;
+	this->ndn_forever() ;
+	close(this->sockfd) ;
 };
 
 // transfer data form local port to socks5 server
@@ -134,6 +140,7 @@ void * thread_fun1(void *val){
 	char data[MAX_SIZE];
 	int datalen;
 	int send_len = 0 ;
+
 	while(true){
 		datalen=recv(local_sockfd, data, sizeof(data), 0);
 		cout << "recv from local_sock datalen = " << datalen << endl ;
@@ -188,5 +195,147 @@ void * thread_fun2(void *val){
 	}
 	close(local_sockfd) ;
 	close(socks_sockfd) ;
+	return NULL;
+}
+// ndn ==================================================================
+
+void Client::ndn_listen_local(string prefix){
+	this->listenLocal() ;
+	this->listen_prefix = prefix ;
+	this->mndn_socket.listen(prefix.data()) ;
+}
+
+Ndn_socket * Client::ndn_connSockes5Server(){
+	Ndn_socket *ndn_socketp = new Ndn_socket() ;
+	string new_prefix = this->listen_prefix + to_string(p_port_seq++) ;
+	ndn_socketp->listen(new_prefix.data()) ;
+
+	ndn_socketp->set_daddr(server_prefix.data()) ;
+	//cout << "probe1 =============" << endl ;
+	ndn_socketp->write(new_prefix.data(), new_prefix.size()) ;
+	char daddr[1000] ;
+	memset(daddr , 0 , 1000) ;
+	ndn_socketp->read(daddr,1000) ;
+	ndn_socketp->set_daddr(daddr) ;
+	return ndn_socketp ;
+}
+void Client::ndn_transData(Ndn_socket &ndn_socket , int newsockfd){
+
+	printf("Data transmission is beginning.\n");
+
+	void* sockfds[2] = {&ndn_socket,&newsockfd};
+
+	pid_t fpid1;
+	while ( ( fpid1 = fork() ) < 0 ){
+		cout << "create child process 1 failled. Retry..." << endl;
+	}
+	if ( 0 == fpid1 ) {
+		cout<<" child process 1 beginning: "<<endl;
+		
+		printf("sockfds[0] = %p , sockfds[1] = %p \n", sockfds[0] ,sockfds[1] ) ;
+		ndn_thread1(sockfds) ;
+		cout<<" child process 1 exit()"<<endl;
+		// close the fd in the son process
+		close(this->sockfd);
+		// exit the son process
+		exit(0);
+	}
+
+	pid_t fpid2;
+	while ( ( fpid2 = fork() ) < 0 ){
+		cout << "create child process 2 failled. Retry..." << endl;
+	}	
+	if ( 0 == fpid2 ) {
+		cout<<" child process 2 beginning: "<<endl;
+		//ndn_thread2(sockfds) ;
+		cout<<" child process 2 exit()"<<endl;
+		// close the fd in the son process
+		close(this->sockfd);
+		// exit the son process
+		exit(0);
+	}	
+}
+// forever listenner function
+void Client::ndn_forever(){
+	while(true){
+		int newsockfd = this->acceptLocal();        
+		Ndn_socket *ndn_socketp = this->ndn_connSockes5Server() ; 
+		ndn_transData(*ndn_socketp, newsockfd) ;
+		// close the fds in main process
+		close(newsockfd);
+		ndn_socketp->close() ;
+		delete(ndn_socketp) ;
+	}
+}
+
+void *Client::ndn_thread1(void *val){
+	
+	Ndn_socket *ndn_socketp = *((Ndn_socket**)val) ;
+	int remote_sockfd = **((int**)val + 1) ;
+	cout << "socket->browser = "  << remote_sockfd << endl ;
+	printf("ndn_socketp = %p \n" , ndn_socketp) ;
+	char data[MAX_SIZE];
+	int datalen;
+	int send_len = 0 ;
+
+	//cout << "probe1 = =========== " << endl ;
+	//ndn_socketp->close() ;
+	//cout << "probe2 = =========== " << endl ;
+	//delete(ndn_socketp) ;
+	//cout << "probe3 = =========== " << endl ;
+	//ndn_socketp = NULL ;
+	//ndn_socketp->write(data,10) ;
+	//cin >> datalen ;
+
+	while(true){
+		datalen=recv(remote_sockfd, data, sizeof(data), 0);
+		cout << "recv from remote_sock datalen = " << datalen << endl ;
+		if (datalen <= 0) {
+			char closedata[10];
+			string closedata_s="closesocks";
+			strcpy(closedata,closedata_s.c_str());
+			send_len = ndn_socketp->write(closedata,10) ;
+			cout << "send to client_sockfd the 'closesocks', len = " << send_len << endl ;
+			break;
+		}else{
+			sleep(10) ;
+			send_len = ndn_socketp->write(data, datalen) ;
+			cout << "send to ndn_socket len = " << send_len << endl ;
+		}
+	}
+	close(remote_sockfd) ;
+	return NULL;
+}
+
+// transfer data form socks5 server to local port
+void *Client::ndn_thread2(void *val){
+
+	Ndn_socket *ndn_socketp = *((Ndn_socket**)val) ;
+	int remote_sockfd = **((int**)val + 1) ;
+	char data[MAX_SIZE];
+	int datalen;
+	int send_len = 0 ;
+	while(true){
+		datalen = ndn_socketp->read(data , sizeof(data)) ;
+		cout << "recv from local_sock datalen = " << datalen << endl ;
+		if (datalen<= 0) {
+			break ;
+		}else if(datalen==10){
+			string data_len10(data,data+10);
+			if(data_len10=="closesocks"){
+				break;
+			}else{
+				//sleep(10) ;
+				send_len = send(remote_sockfd, data, datalen, 0) ;
+				cout << "send to remote_sockfd len = " << send_len << endl ;
+			}
+		}else{  // send to remote server
+			send_len = send(remote_sockfd, data, datalen, 0) ;
+			cout << "send to remote_sockfd len = " << send_len << endl ;
+		}		
+	}
+	ndn_socketp->close() ;
+	delete(ndn_socketp) ;
+	close(remote_sockfd) ;
 	return NULL;
 }

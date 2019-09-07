@@ -33,7 +33,13 @@ int Ndn_socket::set_daddr(const char * prefix){
 	return 0 ;
 }
 int Ndn_socket::write(const char * data , int len ) { 
-	this->write(data , len , this->maddr) ;
+	return this->write(data , len , this->maddr) ;
+}
+int Ndn_socket::write(const uint8_t * data , int len) {
+	return this->write((char*)data, len , this->maddr) ;
+}
+int Ndn_socket::write(const uint8_t * data , int len , string dname_base) {
+	return this->write((char*)data, len , dname_base) ;
 }
 
 // brief : 往socket中写入数据
@@ -70,8 +76,8 @@ int Ndn_socket::write(const char * data , int len , string dname_base ) {
 			bind(&Ndn_socket::onData,this,_1,_2),
 			bind(&Ndn_socket::onNack,this,_1,_2),
 			bind(&Ndn_socket::onTimeout_pre,this,_1));
-	//cout << "pending interest num = " << this->m_face.getNPendingInterests() << endl ;
-	return 0 ;
+	cout << "I>> : " << pre_int.getName() << endl; 
+	return len ;
 }
 int Ndn_socket::read(char *data ) {
 	this->read_buf = data ;
@@ -96,6 +102,7 @@ int Ndn_socket::read(char *data , int buf_sz) {
 void Ndn_socket::onInterest(const InterestFilter& filter, 
 		const Interest& interest) {
 
+	cout << "onInterest : " << interest.getName() << endl ;
 	if(interest.hasParameters()){
 		uint8_t p_type = 0 ;
 		memcpy(&p_type , interest.getParameters().value() , 1) ;

@@ -13,7 +13,7 @@ int main()
 {
 	Ndn_socket ndn_socket ;
 	ndn_socket.listen("/localhost/nfd/recv") ;
-	ndn_socket.listen("/localhost/nfd/send") ;
+	//ndn_socket.listen("/localhost/nfd/send") ;
 	char buff[8000] ;
 	int read_n = 0 ;
 	int recv_count = 0 ;

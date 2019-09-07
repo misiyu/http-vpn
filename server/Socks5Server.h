@@ -13,6 +13,8 @@
 #include <cstring>
 #include <sys/time.h>
 
+#include "ccn_p2p/ndn_socket.h"
+
 #define SERV_TCP_PORT 9011 /* Local listening port number */
 #define MAX_SIZE 1024*7120
 #define SOCKS5_VERSION 5
@@ -33,6 +35,10 @@ class Socks5Server{
 		uint8_t ui0;
 		uint8_t ui5;
 
+		Ndn_socket mndn_socket ;
+		string listen_prefix ;
+		unsigned int p_port_seq ;
+
 	public:
 		// construction function
 		Socks5Server(){
@@ -40,6 +46,7 @@ class Socks5Server{
 			this->ui0=0;
 			this->ui5=5;
 			this->socks_vision=SOCKS5_VERSION;
+			p_port_seq = 0 ;
 		}
 		Socks5Server(int port){
 			this->port=port;
@@ -64,6 +71,16 @@ class Socks5Server{
 		void forever();
 		// server start
 		void start();
+
+		// ndn 监听线程
+		void ndn_listen_local(string prefix) ;
+		Ndn_socket* ndn_accept_local() ;
+		int ndn_negotShake(Ndn_socket &ndn_socket);
+		pair<int,int> ndn_connShake(Ndn_socket &ndn_socket);
+		void ndn_transData(Ndn_socket &ndn_socket , int remote_sockfd);
+		void *ndn_thread1(void *val);
+		void *ndn_thread2(void *val);
+		void ndn_forever();
 };
 
 #endif 

@@ -27,6 +27,8 @@ public:
 	int set_daddr(const char * prefix) ;
 	int write(const char * data , int len) ;
 	int write(const char * data , int len , string dname_base) ;
+	int write(const uint8_t * data , int len) ;
+	int write(const uint8_t * data , int len , string dname_base) ;
 	int read(char *data ) ;
 	int read(char *data , int buf_sz) ;
 	int close() ;
