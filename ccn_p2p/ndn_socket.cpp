@@ -10,7 +10,9 @@ Ndn_socket::Ndn_socket(){
 	this->seq = 0 ;
 	pthread_cond_init(&has_recv , NULL) ;
 	pthread_mutex_init(&recv_mutex , NULL) ;
-
+	struct timeval start  ;
+	gettimeofday(&start , NULL) ;
+	this->start_ts = to_string(start.tv_sec) ;
 	pthread_create(&(this->m_tid) , NULL , run, (void*)&m_face) ;
 }
 
@@ -31,6 +33,12 @@ int Ndn_socket::listen(const char *prefix){
 int Ndn_socket::set_daddr(const char * prefix){
 	this->daddr = prefix ;
 	return 0 ;
+}
+string Ndn_socket::get_daddr(){
+	return this->daddr ;
+}
+int Ndn_socket::write(const string& data) { 
+	return this->write(data.data() , data.length() , this->maddr) ;
 }
 int Ndn_socket::write(const char * data , int len ) { 
 	return this->write(data , len , this->maddr) ;
@@ -73,12 +81,13 @@ int Ndn_socket::write(const char * data , int len , string dname_base ) {
 	pre_int.setParameters(app_param) ;
 
 	this->m_face.expressInterest(pre_int , 
-			bind(&Ndn_socket::onData,this,_1,_2),
+			bind(&Ndn_socket::onData_pre,this,_1,_2),
 			bind(&Ndn_socket::onNack,this,_1,_2),
 			bind(&Ndn_socket::onTimeout_pre,this,_1));
-	cout << "I>> : " << pre_int.getName() << endl; 
+	cout << "pre I>> : " << pre_int.getName() << endl; 
 	return len ;
 }
+
 int Ndn_socket::read(char *data ) {
 	this->read_buf = data ;
 	pthread_mutex_lock(&recv_mutex) ;
@@ -126,6 +135,7 @@ void Ndn_socket::onInterest(const InterestFilter& filter,
 						bind(&Ndn_socket::onData,this,_1,_2),
 						bind(&Ndn_socket::onNack,this,_1,_2),
 						bind(&Ndn_socket::onTimeout,this,_1));
+				cout << "I>> : " <<  request_int.getName() << endl ;
 			}
 		}
 	}
@@ -138,23 +148,31 @@ void Ndn_socket::onInterest(const InterestFilter& filter,
 }
 
 void Ndn_socket::onData(const Interest& interest , const Data& data){
-
 	int data_sz = data.getContent().value_size() ;
-	/*
-	 *pthread_mutex_lock(&recv_mutex) ;
-	 *memcpy(read_buf+recv_n , (char*)(data.getContent().value()) , data_sz ) ;
-	 *recv_n += data_sz ;
-	 *pthread_mutex_unlock(&recv_mutex) ;
-	 *if(recv_n == data_sz) pthread_cond_signal(&has_recv) ;
-	 */
-	
 	r_queue.push_ndata(reinterpret_cast<const char*>(data.getContent().value()),
 			data_sz) ;
+	cout << "D<< :" << data.getName() << " sz = " << data_sz << endl ;
+}
+void Ndn_socket::onData_pre(const Interest& interest , const Data& data){
+	cout << "pre D<< :" << data.getName() << " sz = " << 
+		data.getContent().value_size() << endl ;
 }
 
 void Ndn_socket::onNack(const Interest& interest, const Nack& nack){
-	cout << "connect to remote node fail" << endl ;
-	this->m_face.shutdown() ;
+	cout << "Nack : "<< interest.getName() << endl ;
+	sleep(1) ;
+	Interest interest_new(interest.getName());
+	interest_new.setMustBeFresh(true) ;
+	interest_new.setInterestLifetime(1_s);
+	if(interest.hasParameters()){
+		interest_new.setParameters(interest.getParameters());
+	}
+	this->m_face.expressInterest(interest_new,
+			bind(&Ndn_socket::onData,this,_1,_2),
+			bind(&Ndn_socket::onNack,this,_1,_2),
+			bind(&Ndn_socket::onTimeout,this,_1));
+	cout << "I>> : " <<  interest_new.getName() << endl ;
+	//this->m_face.shutdown() ;
 }
 
 void Ndn_socket::onTimeout(const Interest& interest) {

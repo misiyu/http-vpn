@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <exception>
 #include "r_queue.h"
+#include <sys/time.h>
 
 using std::string ;
 using ndn::Face ;
@@ -23,18 +24,21 @@ class Ndn_socket
 public:
 	Ndn_socket();
 	~Ndn_socket();
-	int listen(const char * prefix) ;
-	int set_daddr(const char * prefix) ;
+	int listen(const char * prefix) ;   // 监听一个前缀
+	int set_daddr(const char * prefix) ;   // 设置一个目标地址
+	string get_daddr() ;
+	int write(const string & data) ;	// 发送数据
 	int write(const char * data , int len) ;
 	int write(const char * data , int len , string dname_base) ;
 	int write(const uint8_t * data , int len) ;
 	int write(const uint8_t * data , int len , string dname_base) ;
-	int read(char *data ) ;
+	int read(char *data ) ;			// 接收数据
 	int read(char *data , int buf_sz) ;
-	int close() ;
+	int close() ;	// 关闭线程-processEvent
 private:
 	void onInterest(const InterestFilter& filter, const Interest& interest) ;
 	void onData(const Interest& interest , const Data& data);
+	void onData_pre(const Interest& interest , const Data& data);
 	void onNack(const Interest& interest, const Nack& nack);
 	void onTimeout(const Interest& interest) ;
 	void onTimeout_pre(const Interest& interest) ;
@@ -55,6 +59,7 @@ private:
 	pthread_cond_t has_recv ;
 	unsigned int seq ;
 	R_Queue r_queue ;
+	string start_ts ;
 	
 
 	Face m_face ;

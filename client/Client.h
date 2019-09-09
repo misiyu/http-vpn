@@ -43,37 +43,37 @@ class Client{
 		// construction function
 		Client(){
 			this->port=SERV_TCP_PORT;
-			this->server_prefix = "/localhost/nfd/vpn/server" ;
+			this->server_prefix = "/aaa/nfd/vpn/server" ;
+			mndn_socket.set_daddr(server_prefix.data()) ;
 			cout << server_prefix << endl ;
 		}
 		Client(int port){
 			this->port=port;
-			this->server_prefix = "/localhost/nfd/vpn/server" ;
+			this->server_prefix = "/aaa/nfd/vpn/server" ;
+			mndn_socket.set_daddr(server_prefix.data()) ;
 			cout << server_prefix << endl ;
 		}
 		~Client(){
 		}
 		// listen to the local port
-		void listenLocal();
+		void listenLocal() ;
 		// waiting for the local port's connection 
 		int acceptLocal();
 		// connect to the socks server
-		int connSockes5Server();
-		// data transmission shake
-		void transData(pair<int,int> pairval);
 		// forever listenner function
-		void forever();
 		// server start
 		void start();
 
 		void ndn_listen_local(string prefix) ;
-		Ndn_socket * ndn_connSockes5Server();
+		void ndn_connSockes5Server(Ndn_socket &ndn_socket , string new_prefix);
 		// data transmission shake
-		void ndn_transData(Ndn_socket &ndn_socket , int remote_sockfd);
+		void ndn_transData(Ndn_socket &ndn_socket , int newsockfd );
 		// forever listenner function
 		void ndn_forever();
-		void *ndn_thread1(void *val);
-		void *ndn_thread2(void *val);
+	private :
+		static void *ndn_thread1(void *val);
+		static void *ndn_thread2(void *val);
+		string get_newprefix() ;
 };
 
 #endif 

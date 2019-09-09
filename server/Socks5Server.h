@@ -56,30 +56,16 @@ class Socks5Server{
 		}
 		~Socks5Server(){
 		}
-		// listen to the local port
-		void listenLocal();
-		// waiting for the local port's connection 
-		int acceptLocal();
-		// a headshake for the sub-negotiation method
-		int negotShake(int val);
-		// a headshake for the connection information 
-		// 		to remote server
-		pair<int,int> connShake(int val);
-		// data transmission shake
-		void transData(pair<int,int> pairval);
-		// forever listenner function
-		void forever();
 		// server start
 		void start();
-
 		// ndn 监听线程
 		void ndn_listen_local(string prefix) ;
-		Ndn_socket* ndn_accept_local() ;
+		string ndn_accept_local(string new_prefix) ;
 		int ndn_negotShake(Ndn_socket &ndn_socket);
 		pair<int,int> ndn_connShake(Ndn_socket &ndn_socket);
-		void ndn_transData(Ndn_socket &ndn_socket , int remote_sockfd);
-		void *ndn_thread1(void *val);
-		void *ndn_thread2(void *val);
+		void ndn_transData(string new_prefix , string client_prefix);
+		static void *ndn_thread1(void *val);
+		static void *ndn_thread2(void *val);
 		void ndn_forever();
 };
 

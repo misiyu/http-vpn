@@ -16,7 +16,6 @@ int main()
 		memset(buff, 'a'+i , BUFF_SZ) ;
 		ndn_socket.write(buff , BUFF_SZ) ;
 	}
-	
 	ndn_socket.close() ;
 	cout << endl ;
 
