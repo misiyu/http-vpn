@@ -1,5 +1,17 @@
 # http-vpn
 
+准备工作：
+1、安装NFD
+2、配置：
+	$ sudo vim /usr/local/etc/ndn/nfd.conf 
+	查找到以下行:
+	cs_unsolicited_policy XXX   (XXX表示任意值)
+	改为:
+	cs_unsolicited_policy admit-local
+3、重启NFD
+	$ nfd-stop
+	$ nfd-start
+
 运行：
 1、打开client：
 	（1）进入client文件夹 
