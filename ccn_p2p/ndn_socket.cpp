@@ -14,6 +14,7 @@ Ndn_socket::Ndn_socket(){
 	gettimeofday(&start , NULL) ;
 	this->start_ts = to_string(start.tv_sec) ;
 	pthread_create(&(this->m_tid) , NULL , run, (void*)&m_face) ;
+	this->state = true ;
 }
 
 Ndn_socket::~Ndn_socket(){
@@ -56,7 +57,9 @@ int Ndn_socket::write(const uint8_t * data , int len , string dname_base) {
 //			dname_base  数据包的前缀名称 
 
 int Ndn_socket::write(const char * data , int len , string dname_base ) {
-	if(dname_base[dname_base.length()-1] != '/') dname_base += "/" ;
+	if(dname_base[dname_base.length()-1] != '/') {
+		dname_base += ("/"+this->start_ts+"/") ;
+	}
 	int pkt_n = len/8000 ;
 	if(len%8000 != 0) pkt_n ++ ;
 	string pre_payload = dname_base + to_string(seq) + "-" + to_string(seq+pkt_n) ;
@@ -71,7 +74,7 @@ int Ndn_socket::write(const char * data , int len , string dname_base ) {
 		this->m_face.put(data_pkt) ;
 	}
 
-	string pre_iname = daddr +"/"+ to_string(seq) ;
+	string pre_iname = daddr +"/"+ this->start_ts + "/" + to_string(seq) ;
 	Interest pre_int(Name(pre_iname.data())) ;
 	pre_int.setInterestLifetime(1_s) ;
 	pre_int.setMustBeFresh(true) ;
@@ -80,23 +83,13 @@ int Ndn_socket::write(const char * data , int len , string dname_base ) {
 			pre_payload.data(), pre_payload.length());
 	pre_int.setParameters(app_param) ;
 
+	// 发送预请求兴趣包
 	this->m_face.expressInterest(pre_int , 
 			bind(&Ndn_socket::onData_pre,this,_1,_2),
-			bind(&Ndn_socket::onNack,this,_1,_2),
+			bind(&Ndn_socket::onNack_pre,this,_1,_2),
 			bind(&Ndn_socket::onTimeout_pre,this,_1));
 	cout << "pre I>> : " << pre_int.getName() << endl; 
 	return len ;
-}
-
-int Ndn_socket::read(char *data ) {
-	this->read_buf = data ;
-	pthread_mutex_lock(&recv_mutex) ;
-	while(recv_n == 0){
-		pthread_cond_wait(&has_recv , &recv_mutex) ;
-	}
-	pthread_mutex_unlock(&recv_mutex) ;
-
-	return recv_n ;
 }
 
 int Ndn_socket::read(char *data , int buf_sz) {
@@ -160,13 +153,11 @@ void Ndn_socket::onData_pre(const Interest& interest , const Data& data){
 
 void Ndn_socket::onNack(const Interest& interest, const Nack& nack){
 	cout << "Nack : "<< interest.getName() << endl ;
+	if(this->state == false) return ;
 	sleep(1) ;
 	Interest interest_new(interest.getName());
 	interest_new.setMustBeFresh(true) ;
 	interest_new.setInterestLifetime(1_s);
-	if(interest.hasParameters()){
-		interest_new.setParameters(interest.getParameters());
-	}
 	this->m_face.expressInterest(interest_new,
 			bind(&Ndn_socket::onData,this,_1,_2),
 			bind(&Ndn_socket::onNack,this,_1,_2),
@@ -175,8 +166,26 @@ void Ndn_socket::onNack(const Interest& interest, const Nack& nack){
 	//this->m_face.shutdown() ;
 }
 
+void Ndn_socket::onNack_pre(const Interest& interest, const Nack& nack){
+	cout << "pre Nack : "<< interest.getName() << endl ;
+	if(this->state == false) return ;
+	sleep(1) ;
+	Interest interest_new(interest.getName());
+	interest_new.setMustBeFresh(true) ;
+	interest_new.setInterestLifetime(1_s);
+	if(interest.hasParameters()){
+		interest_new.setParameters(interest.getParameters());
+		this->m_face.expressInterest(interest_new,
+				bind(&Ndn_socket::onData_pre,this,_1,_2),
+				bind(&Ndn_socket::onNack_pre,this,_1,_2),
+				bind(&Ndn_socket::onTimeout_pre,this,_1));
+	}
+	cout << "pre I>> : " <<  interest_new.getName() << endl ;
+}
+
 void Ndn_socket::onTimeout(const Interest& interest) {
 	cout << "Time out " << interest.getName() << endl ;
+	if(this->state == false) return ;
 	Interest interest_new(interest.getName());
 	interest_new.setInterestLifetime(1_s);
 	this->m_face.expressInterest(interest_new,
@@ -198,10 +207,13 @@ void Ndn_socket::onRegisterFailed(const Name& prefix, const std::string& reason)
 }
 
 int Ndn_socket::close(){
+	if(this->state == false ) return 0 ;
+	this->state = false ;
 	while(m_face.getNPendingInterests() > 0){
 		usleep(10000) ;
 	}
 	this->m_face.shutdown() ;
+	return 0 ;
 }
 
 void *Ndn_socket::run(void *param){

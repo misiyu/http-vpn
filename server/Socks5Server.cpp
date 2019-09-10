@@ -305,9 +305,8 @@ void *Socks5Server::ndn_thread1(void *val){
 	int datalen;
 	int send_len = 0 ;
 	while(true){
-		cout << "before recv" << endl; 
 		datalen = ndn_socketp->read(data , sizeof(data)) ;
-		cout << "recv from ndn_socket datalen = " << datalen << endl ;
+		cout << "**************recv from ndn_socket datalen = " << datalen << endl ;
 		if (datalen<= 0) {
 			break ;
 		}else if(datalen==10){
@@ -320,7 +319,7 @@ void *Socks5Server::ndn_thread1(void *val){
 			}
 		}else{  // send to remote server
 			send_len = send(remote_sockfd, data, datalen, 0) ;
-			cout << "send to remote_sockfd len = " << send_len << endl ;
+			cout << "****************send to remote_sockfd len = " << send_len << endl ;
 		}		
 	}
 	ndn_socketp->close() ;
@@ -335,21 +334,21 @@ void *Socks5Server::ndn_thread2(void *val){
 	int datalen;
 	int send_len = 0 ;
 	while(true){
-		cout << "before recv" << endl; 
 		datalen=recv(remote_sockfd, data, sizeof(data), 0);
-		cout << "recv from remote_sock datalen = " << datalen << endl ;
+		cout << "*************recv from remote_sock datalen = " << datalen << endl ;
 		if (datalen <= 0) {
-			char closedata[10];
-			string closedata_s="closesocks";
-			strcpy(closedata,closedata_s.c_str());
-			send_len = ndn_socketp->write(closedata,10) ;
-			cout << "send to client_sockfd the 'closesocks', len = " << send_len << endl ;
+			//char closedata[10];
+			//string closedata_s="closesocks";
+			//strcpy(closedata,closedata_s.c_str());
+			//send_len = ndn_socketp->write(closedata,10) ;
+			//cout << "send to client_sockfd the 'closesocks', len = " << send_len << endl ;
 			break;
 		}else{
 			send_len = ndn_socketp->write(data, datalen) ;
-			cout << "send to local_sockfd len = " << send_len << endl ;
+			cout << "**************send to ndn_socket len = " << send_len << endl ;
 		}
 	}
+	ndn_socketp->close() ;
 	close(remote_sockfd) ;
 	return NULL;
 }

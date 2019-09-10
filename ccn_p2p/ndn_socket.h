@@ -32,7 +32,7 @@ public:
 	int write(const char * data , int len , string dname_base) ;
 	int write(const uint8_t * data , int len) ;
 	int write(const uint8_t * data , int len , string dname_base) ;
-	int read(char *data ) ;			// 接收数据
+	//int read(char *data ) ;			// 接收数据
 	int read(char *data , int buf_sz) ;
 	int close() ;	// 关闭线程-processEvent
 private:
@@ -40,6 +40,7 @@ private:
 	void onData(const Interest& interest , const Data& data);
 	void onData_pre(const Interest& interest , const Data& data);
 	void onNack(const Interest& interest, const Nack& nack);
+	void onNack_pre(const Interest& interest, const Nack& nack);
 	void onTimeout(const Interest& interest) ;
 	void onTimeout_pre(const Interest& interest) ;
 	void onRegisterFailed(const Name& prefix, const std::string& reason) ;
@@ -60,6 +61,8 @@ private:
 	unsigned int seq ;
 	R_Queue r_queue ;
 	string start_ts ;
+
+	bool state ;
 	
 
 	Face m_face ;
