@@ -335,13 +335,8 @@ void *Socks5Server::ndn_thread2(void *val){
 	int send_len = 0 ;
 	while(true){
 		datalen=recv(remote_sockfd, data, sizeof(data), 0);
-		cout << "*************recv from remote_sock datalen = " << datalen << endl ;
+		cout << "************recv from remote_sock datalen = " << datalen << endl ;
 		if (datalen <= 0) {
-			//char closedata[10];
-			//string closedata_s="closesocks";
-			//strcpy(closedata,closedata_s.c_str());
-			//send_len = ndn_socketp->write(closedata,10) ;
-			//cout << "send to client_sockfd the 'closesocks', len = " << send_len << endl ;
 			break;
 		}else{
 			send_len = ndn_socketp->write(data, datalen) ;

@@ -41,11 +41,6 @@ int Client::acceptLocal(){
 
 // server start
 void Client::start(){
-	/*
-	 *this->listenLocal();
-	 *this->forever();
-	 *close(this->sockfd);
-	 */
 
 	this->ndn_listen_local("/aaa/nfd/vpn/client") ;
 	this->ndn_forever() ;
@@ -78,9 +73,10 @@ void Client::ndn_transData(Ndn_socket &ndn_socket , int newsockfd){
 	pthread_join(ptid1 , NULL) ;
 	pthread_join(ptid2 , NULL) ;
 
-	cout<<" child process 1 exit()"<<endl;
+	cout<<">>>>>>>>>>>>>>>>>>>>>>>>>>child process 1 exit()"<<endl;
 	// close the fd in the son process
 	close(this->sockfd);
+	ndn_socket.close() ;
 	// exit the son process
 	exit(0);
 }
@@ -130,18 +126,15 @@ void *Client::ndn_thread1(void *val){
 		datalen=recv(remote_sockfd, data, sizeof(data), 0);
 		cout << "**************recv from browser_sock datalen = " << datalen << endl ;
 		if (datalen <= 0) {
-			//char closedata[10];
-			//string closedata_s="closesocks";
-			//strcpy(closedata,closedata_s.c_str());
-			//send_len = ndn_socketp->write(closedata,10) ;
-			//cout << "send to client_sockfd the 'closesocks', len = " << send_len << endl ;
 			break;
 		}else{
 			send_len = ndn_socketp->write(data, datalen) ;
 			cout << "***************send to ndn_socket len = " << send_len << endl ;
 		}
 	}
+	cout << ">>>>>>>>>>>>>>>>>>>>thread1 end" << endl ;
 	ndn_socketp->close() ;
+	cout << ">>>>>>>>>>>>>>>>>>>>ndn_socket closed" << endl ;
 	close(remote_sockfd) ;
 	return NULL;
 }
@@ -173,6 +166,7 @@ void *Client::ndn_thread2(void *val){
 			cout << "************send to browser_sockfd len = " << send_len << endl ;
 		}		
 	}
+	cout << ">>>>>>>>>>>>>>>>>>>>thread2 end" << endl ;
 	ndn_socketp->close() ;
 	close(remote_sockfd) ;
 	return NULL;

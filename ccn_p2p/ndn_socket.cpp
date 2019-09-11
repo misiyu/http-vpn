@@ -88,12 +88,13 @@ int Ndn_socket::write(const char * data , int len , string dname_base ) {
 			bind(&Ndn_socket::onData_pre,this,_1,_2),
 			bind(&Ndn_socket::onNack_pre,this,_1,_2),
 			bind(&Ndn_socket::onTimeout_pre,this,_1));
-	cout << "pre I>> : " << pre_int.getName() << endl; 
+	//cout << "pre I>> : " << pre_int.getName() << endl; 
 	return len ;
 }
 
 int Ndn_socket::read(char *data , int buf_sz) {
 	r_queue.wait4data() ;
+	if(this->state == false) return -1 ;
 	int data_len = r_queue.get_data_len() ;
 	if(data_len > buf_sz) data_len = buf_sz ;
 	r_queue.get_ndata(data , data_len) ;
@@ -104,7 +105,7 @@ int Ndn_socket::read(char *data , int buf_sz) {
 void Ndn_socket::onInterest(const InterestFilter& filter, 
 		const Interest& interest) {
 
-	cout << "onInterest : " << interest.getName() << endl ;
+	//cout << "onInterest : " << interest.getName() << endl ;
 	if(interest.hasParameters()){
 		uint8_t p_type = 0 ;
 		memcpy(&p_type , interest.getParameters().value() , 1) ;
@@ -113,7 +114,7 @@ void Ndn_socket::onInterest(const InterestFilter& filter,
 					interest.getParameters().value_size()) ;
 			string datas_name((char*)dname_block.value() , 
 					dname_block.value_size()) ;
-			cout << "datas_name : "  <<datas_name << endl ;
+			//cout << "datas_name : "  <<datas_name << endl ;
 			// format : /ndn/edu/pkusz/node11/vpn/5-9
 			int idx1 = datas_name.rfind('/')+1 ;
 			int first, last ;
@@ -128,7 +129,7 @@ void Ndn_socket::onInterest(const InterestFilter& filter,
 						bind(&Ndn_socket::onData,this,_1,_2),
 						bind(&Ndn_socket::onNack,this,_1,_2),
 						bind(&Ndn_socket::onTimeout,this,_1));
-				cout << "I>> : " <<  request_int.getName() << endl ;
+				//cout << "I>> : " <<  request_int.getName() << endl ;
 			}
 		}
 	}
@@ -144,11 +145,11 @@ void Ndn_socket::onData(const Interest& interest , const Data& data){
 	int data_sz = data.getContent().value_size() ;
 	r_queue.push_ndata(reinterpret_cast<const char*>(data.getContent().value()),
 			data_sz) ;
-	cout << "D<< :" << data.getName() << " sz = " << data_sz << endl ;
+	//cout << "D<< :" << data.getName() << " sz = " << data_sz << endl ;
 }
 void Ndn_socket::onData_pre(const Interest& interest , const Data& data){
-	cout << "pre D<< :" << data.getName() << " sz = " << 
-		data.getContent().value_size() << endl ;
+	//cout << "pre D<< :" << data.getName() << " sz = " << 
+		//data.getContent().value_size() << endl ;
 }
 
 void Ndn_socket::onNack(const Interest& interest, const Nack& nack){
@@ -173,13 +174,11 @@ void Ndn_socket::onNack_pre(const Interest& interest, const Nack& nack){
 	Interest interest_new(interest.getName());
 	interest_new.setMustBeFresh(true) ;
 	interest_new.setInterestLifetime(1_s);
-	if(interest.hasParameters()){
-		interest_new.setParameters(interest.getParameters());
-		this->m_face.expressInterest(interest_new,
-				bind(&Ndn_socket::onData_pre,this,_1,_2),
-				bind(&Ndn_socket::onNack_pre,this,_1,_2),
-				bind(&Ndn_socket::onTimeout_pre,this,_1));
-	}
+	interest_new.setParameters(interest.getParameters());
+	this->m_face.expressInterest(interest_new,
+			bind(&Ndn_socket::onData_pre,this,_1,_2),
+			bind(&Ndn_socket::onNack_pre,this,_1,_2),
+			bind(&Ndn_socket::onTimeout_pre,this,_1));
 	cout << "pre I>> : " <<  interest_new.getName() << endl ;
 }
 
@@ -209,6 +208,8 @@ void Ndn_socket::onRegisterFailed(const Name& prefix, const std::string& reason)
 int Ndn_socket::close(){
 	if(this->state == false ) return 0 ;
 	this->state = false ;
+	char c_flag = 'c' ;
+	r_queue.push_ndata(&c_flag,1) ;
 	while(m_face.getNPendingInterests() > 0){
 		usleep(10000) ;
 	}
