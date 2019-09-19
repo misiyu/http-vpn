@@ -3,15 +3,14 @@
 using namespace std;
 // server start
 void Socks5Server::start(){
-	//this->ndn_listen_local("/localhost/nfd/vpn/server") ;
-	this->ndn_listen_local("/aaa/nfd/vpn/server") ;
+	this->ndn_listen_local(listen_prefix) ;
 	this->ndn_forever() ;
 	mndn_socket.close() ;
 };
 
 void Socks5Server::ndn_listen_local(string prefix){
-	this->listen_prefix= prefix ;
 	mndn_socket.listen(prefix.data()) ;
+	cout << "listen on : " << prefix << endl ;
 }
 
 string Socks5Server::ndn_accept_local(string new_prefix) {

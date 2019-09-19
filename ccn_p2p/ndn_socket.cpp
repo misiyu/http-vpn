@@ -152,13 +152,17 @@ void Ndn_socket::onData_pre(const Interest& interest , const Data& data){
 		//data.getContent().value_size() << endl ;
 }
 
+
 void Ndn_socket::onNack(const Interest& interest, const Nack& nack){
 	cout << "Nack : "<< interest.getName() << endl ;
+	long lifetime = interest.getInterestLifetime().count() ;
+	if(lifetime > 3000) return ;
 	if(this->state == false) return ;
 	sleep(1) ;
 	Interest interest_new(interest.getName());
 	interest_new.setMustBeFresh(true) ;
-	interest_new.setInterestLifetime(1_s);
+	boost::chrono::milliseconds new_lifetime(lifetime+200) ;
+	interest_new.setInterestLifetime(new_lifetime);
 	this->m_face.expressInterest(interest_new,
 			bind(&Ndn_socket::onData,this,_1,_2),
 			bind(&Ndn_socket::onNack,this,_1,_2),
@@ -169,11 +173,14 @@ void Ndn_socket::onNack(const Interest& interest, const Nack& nack){
 
 void Ndn_socket::onNack_pre(const Interest& interest, const Nack& nack){
 	cout << "pre Nack : "<< interest.getName() << endl ;
-	if(this->state == false) return ;
+	cout << "listen : " << this->maddr << endl ;
+	long lifetime = interest.getInterestLifetime().count() ;
+	if(lifetime > 3000 || this->state == false ) return ;
 	sleep(1) ;
 	Interest interest_new(interest.getName());
 	interest_new.setMustBeFresh(true) ;
-	interest_new.setInterestLifetime(1_s);
+	boost::chrono::milliseconds new_lifetime(lifetime+200) ;
+	interest_new.setInterestLifetime(new_lifetime);
 	interest_new.setParameters(interest.getParameters());
 	this->m_face.expressInterest(interest_new,
 			bind(&Ndn_socket::onData_pre,this,_1,_2),
@@ -184,9 +191,12 @@ void Ndn_socket::onNack_pre(const Interest& interest, const Nack& nack){
 
 void Ndn_socket::onTimeout(const Interest& interest) {
 	cout << "Time out " << interest.getName() << endl ;
+	long lifetime = interest.getInterestLifetime().count() ;
+	if(lifetime > 3000) return ;
 	if(this->state == false) return ;
 	Interest interest_new(interest.getName());
-	interest_new.setInterestLifetime(1_s);
+	boost::chrono::milliseconds new_lifetime(lifetime+200) ;
+	interest_new.setInterestLifetime(new_lifetime);
 	this->m_face.expressInterest(interest_new,
 			bind(&Ndn_socket::onData,this,_1,_2),
 			bind(&Ndn_socket::onNack,this,_1,_2),

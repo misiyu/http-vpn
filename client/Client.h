@@ -41,15 +41,17 @@ class Client{
 
 	public:
 		// construction function
-		Client(){
+		Client(const string &s_prefix , const string &m_prefix){
 			this->port=SERV_TCP_PORT;
-			this->server_prefix = "/aaa/nfd/vpn/server" ;
+			this->server_prefix = s_prefix;
+			this->listen_prefix = m_prefix ;
 			mndn_socket.set_daddr(server_prefix.data()) ;
 			cout << server_prefix << endl ;
 		}
-		Client(int port){
+		Client(int port , const string &s_prefix , const string &m_prefix){
 			this->port=port;
-			this->server_prefix = "/aaa/nfd/vpn/server" ;
+			this->server_prefix = s_prefix ;
+			this->listen_prefix = m_prefix ;
 			mndn_socket.set_daddr(server_prefix.data()) ;
 			cout << server_prefix << endl ;
 		}

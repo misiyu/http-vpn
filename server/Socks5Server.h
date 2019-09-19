@@ -41,18 +41,21 @@ class Socks5Server{
 
 	public:
 		// construction function
-		Socks5Server(){
+		Socks5Server(const string &server_prefix){
 			this->port=SERV_TCP_PORT;
 			this->ui0=0;
 			this->ui5=5;
 			this->socks_vision=SOCKS5_VERSION;
 			p_port_seq = 0 ;
+			this->listen_prefix = server_prefix ;
 		}
-		Socks5Server(int port){
+		Socks5Server(int port , const string &server_prefix){
 			this->port=port;
 			this->ui0=0;
 			this->ui5=5;
 			this->socks_vision=SOCKS5_VERSION;
+			p_port_seq = 0 ;
+			this->listen_prefix = server_prefix ;
 		}
 		~Socks5Server(){
 		}

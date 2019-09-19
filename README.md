@@ -26,6 +26,8 @@
 
 1、命令行：
 	curl -v --socks5 127.0.0.1:8888  https://www.baidu.com
+	curl -v --socks5 127.0.0.1:8888  https://dlie.sogoucdn.com/se/sogou_explorer_8.6_0903.exe -o test.exe
+	http://mirrors.huaweicloud.com/ubuntukylin/ubuntukylin-19.04-enhanced-amd64.iso
 
 2、浏览器：
 	设置浏览器socks代理端口为8888

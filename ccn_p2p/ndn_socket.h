@@ -46,6 +46,7 @@ private:
 	void onRegisterFailed(const Name& prefix, const std::string& reason) ;
 	static void *run(void *param) ;
 
+
 private:
 	/* data */
 	pthread_t m_tid ;
@@ -61,9 +62,7 @@ private:
 	unsigned int seq ;
 	R_Queue r_queue ;
 	string start_ts ;
-
 	bool state ;
-	
 
 	Face m_face ;
 	KeyChain m_keyChain ;

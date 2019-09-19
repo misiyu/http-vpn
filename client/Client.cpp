@@ -42,14 +42,13 @@ int Client::acceptLocal(){
 // server start
 void Client::start(){
 
-	this->ndn_listen_local("/aaa/nfd/vpn/client") ;
+	this->ndn_listen_local(listen_prefix.data()) ;
 	this->ndn_forever() ;
 	close(this->sockfd) ;
 };
 
 void Client::ndn_listen_local(string prefix){
 	this->listenLocal() ;
-	this->listen_prefix = prefix ;
 	this->mndn_socket.listen(prefix.data()) ;
 }
 
