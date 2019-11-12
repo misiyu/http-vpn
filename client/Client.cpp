@@ -11,6 +11,10 @@ void Client::listenLocal(){
 	(this->serv_addr).sin_addr.s_addr = htonl(INADDR_ANY);
 	(this->serv_addr).sin_port = htons(this->port);	
 	// bind
+	
+	int on = 1;
+	setsockopt(sockfd , SOL_SOCKET, SO_REUSEADDR, &on, sizeof(int)) ;
+
 	while( bind(this->sockfd, (struct sockaddr *) &(this->serv_addr), sizeof(this->serv_addr)) < 0){
 		sleep(1) ;
 		cout << "bind fail" << endl ;
